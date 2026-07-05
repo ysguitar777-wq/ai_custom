@@ -1,0 +1,59 @@
+{
+  "_comment": "Sonnet 5 を Fable に近づけるための推奨リクエストパラメータ。用途別 3 プロファイル。",
+
+  "profiles": {
+    "fable_max": {
+      "_use_for": "最難関のコーディング/エージェントタスク。Fable に最も近い挙動。",
+      "model": "claude-sonnet-5",
+      "max_tokens": 128000,
+      "stream": true,
+      "thinking": { "type": "adaptive" },
+      "output_config": { "effort": "xhigh" }
+    },
+
+    "fable_agent_loop": {
+      "_use_for": "長時間の自律エージェントループ。Task Budget でループ全体の配分をモデルに意識させる。",
+      "_beta_headers": ["task-budgets-2026-03-13"],
+      "_endpoint": "client.beta.messages.stream",
+      "model": "claude-sonnet-5",
+      "max_tokens": 128000,
+      "thinking": { "type": "adaptive" },
+      "output_config": {
+        "effort": "xhigh",
+        "task_budget": { "type": "tokens", "total": 200000 }
+      }
+    },
+
+    "fable_advised": {
+      "_use_for": "戦略判断の質を Opus 4.8 で底上げしたいタスク。実行は Sonnet 価格のまま。",
+      "_beta_headers": ["advisor-tool-2026-03-01"],
+      "_endpoint": "client.beta.messages.create",
+      "model": "claude-sonnet-5",
+      "max_tokens": 64000,
+      "stream": true,
+      "thinking": { "type": "adaptive" },
+      "output_config": { "effort": "xhigh" },
+      "tools": [
+        { "type": "advisor_20260301", "name": "advisor", "model": "claude-opus-4-8" }
+      ]
+    }
+  },
+
+  "_forbidden_on_sonnet_5": {
+    "_comment": "以下は Sonnet 5 では 400 エラーになる(Fable と同じ制約)。既存コードから除去すること。",
+    "params": [
+      "thinking.budget_tokens",
+      "temperature (非デフォルト値)",
+      "top_p (非デフォルト値)",
+      "top_k (非デフォルト値)",
+      "assistant プレフィル(messages 末尾の assistant ターン)"
+    ]
+  },
+
+  "_notes": {
+    "display": "思考の要約をユーザーに見せる場合は thinking を {\"type\": \"adaptive\", \"display\": \"summarized\"} にする(デフォルトは omitted で空文字)。",
+    "streaming": "max_tokens が 16K を超える場合はストリーミング必須(SDK の HTTP タイムアウト回避)。",
+    "tokenizer": "Sonnet 5 は新トークナイザで同一テキストが約 30% 多いトークン数になる。max_tokens とコスト基準は count_tokens で再計測すること。",
+    "task_budget_minimum": 20000
+  }
+}
